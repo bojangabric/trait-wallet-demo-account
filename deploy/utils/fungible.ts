@@ -1,8 +1,10 @@
 import { ApiPromise } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
+import Pino from "pino";
 import { Fungible } from "./types";
 import { processClearingTransaction, processSignedTransaction } from "./utils";
 
+const logger = Pino();
 async function create_fungible_tokens(
   api: ApiPromise,
   appAgentOwner: KeyringPair,
@@ -11,18 +13,18 @@ async function create_fungible_tokens(
 ) {
   return new Promise<string[]>(async (resolve, reject) => {
     try {
-      console.log(
+      logger.info(
         "Start to create " +
           tokensDecimals.length +
           " fungible tokens for the AppAgent ID " +
           appAgentId
       );
 
-      console.log("Build Clearing transaction to create Fungible tokens");
+      logger.info("Build Clearing transaction to create Fungible tokens");
       let atomics: any[] = [];
       for (const tokenDecimals of tokensDecimals) {
         let min_balance = calculateMinBalance(tokenDecimals);
-        console.log(
+        logger.info(
           "Min balance for token with decimals " +
             tokenDecimals +
             " is " +
@@ -39,7 +41,7 @@ async function create_fungible_tokens(
       let create_fungible_token_ct =
         api.tx.addressPools.submitClearingTransaction(appAgentId, atomics);
 
-      console.log(
+      logger.info(
         "Process clearing transaction and collect IDs of created Fungible tokens."
       );
       let tokenIds: string[] = [];
@@ -56,15 +58,15 @@ async function create_fungible_tokens(
         }
       }
 
-      console.log("Generated token IDs: ", tokenIds);
+      logger.info("Generated token IDs: ", tokenIds);
       if (tokenIds.length != tokensDecimals.length) {
         throw new Error("Not all required fungibles were created");
       }
 
-      console.log("Resolving promise with tokenIds:", tokenIds);
+      logger.info("Resolving promise with tokenIds:", tokenIds);
       resolve(tokenIds);
     } catch (error) {
-      console.error("Error creating fungible tokens:", error);
+      logger.error("Error creating fungible tokens:", error);
       reject(error);
     }
   });
@@ -89,17 +91,17 @@ async function set_metadata_and_mint_fungible_token(
 ) {
   return new Promise<void>(async (resolve, reject) => {
     try {
-      console.log(
+      logger.info(
         "Start to create fungible token for the AppAgent ID " + appAgentId
       );
-      console.log("Fungibles: ", fungibleInfos);
+      logger.info("Fungibles: ", fungibleInfos);
 
-      console.log("Create atomics to mint and set metadata for each token");
+      logger.info("Create atomics to mint and set metadata for each token");
       let atomics: any[] = [];
       for (const fungibleInfo of fungibleInfos) {
-        console.log(`Creating atomic for token ${fungibleInfo.tokenId}`);
+        logger.info(`Creating atomic for token ${fungibleInfo.tokenId}`);
         let mintAmount = 1000 * Math.pow(10, fungibleInfo.decimals);
-        console.log("Calculated mint amount:", mintAmount);
+        logger.info("Calculated mint amount:", mintAmount);
         let mint_token_call = api.tx.assets.mint(
           fungibleInfo.tokenId,
           token_recipient.address,
@@ -117,18 +119,18 @@ async function set_metadata_and_mint_fungible_token(
         const token_atomic = [mint_token_action, set_metadata_action];
         atomics.push(token_atomic);
       }
-      console.log(`Total atomics created: ${atomics.length}`);
+      logger.info(`Total atomics created: ${atomics.length}`);
 
       let configure_fungible_ct = api.tx.addressPools.submitClearingTransaction(
         appAgentId,
         atomics
       );
       await processClearingTransaction(appAgentOwner, configure_fungible_ct);
-      console.log("Fungible tokens configured successfully");
+      logger.info("Fungible tokens configured successfully");
 
       resolve();
     } catch (error) {
-      console.error(
+      logger.error(
         "Error setting metadata and minting fungible tokens:",
         error
       );
@@ -157,16 +159,16 @@ async function create_token_transfer(
   token_recipients: KeyringPair[],
   amount: number
 ) {
-  console.log("Generate free transfers between the two users");
-  console.log("Token ID: ", fungibleInfo.tokenId);
-  console.log("Token sender: ", token_sender.address);
+  logger.info("Generate free transfers between the two users");
+  logger.info("Token ID: ", fungibleInfo.tokenId);
+  logger.info("Token sender: ", token_sender.address);
 
   for (let i = 0; i < token_recipients.length; i++) {
     const transferAmount = calculateTransferAmount(
       fungibleInfo.decimals,
       amount
     );
-    console.log("Calculated transfer amount:", transferAmount);
+    logger.info("Calculated transfer amount:", transferAmount);
     let tx = api.tx.playerTransfers.submitTransferAssets(
       fungibleInfo.tokenId,
       token_recipients[i].address,
@@ -175,10 +177,10 @@ async function create_token_transfer(
 
     await processSignedTransaction(token_sender, tx);
 
-    console.log(`Free transfer ${i + 1} created and in block`);
+    logger.info(`Free transfer ${i + 1} created and in block`);
   }
 
-  console.log("All transfers completed successfully");
+  logger.info("All transfers completed successfully");
 }
 
 export {

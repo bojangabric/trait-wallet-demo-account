@@ -1,6 +1,9 @@
 import axios from "axios";
 import dotenv from "dotenv";
+import Pino from "pino";
 dotenv.config();
+
+const logger = Pino();
 
 function buildDatagateUrl() {
   const datagateUrl = process.env.DATAGATE_URL;
@@ -14,7 +17,7 @@ function getAllEvents(transaction_hash: string): Promise<any[] | false> {
   return new Promise(async (resolve, reject) => {
     const apiUrl = buildDatagateUrl();
 
-    console.log(
+    logger.info(
       "DATAGATE:Checking event occurrence for transaction:",
       transaction_hash
     );
@@ -43,13 +46,13 @@ function getAllEvents(transaction_hash: string): Promise<any[] | false> {
       ) {
         resolve(response.data.data);
       } else {
-        console.log(
+        logger.info(
           `No events found for the transaction '${transaction_hash}'`
         );
         resolve(false);
       }
     } catch (error) {
-      console.error("Error calling the API:", error);
+      logger.error("Error calling the API:", error);
       reject(error);
     }
   });

@@ -4,6 +4,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import Pino from "pino";
 import { fileURLToPath } from "url";
 import { create_app_agent } from "./utils/app_agent";
 import {
@@ -21,6 +22,8 @@ import {
   processSignedBatchTransaction,
   processSignedTransaction,
 } from "./utils/utils";
+
+const logger = Pino();
 
 const startTime = Date.now();
 
@@ -42,16 +45,16 @@ function getEnvVar(name: string) {
 }
 
 async function main() {
-  console.log("Read WS_PROVIDER_URL from .env file");
+  logger.info("Read WS_PROVIDER_URL from .env file");
   const wsProviderUrl = process.env.WS_PROVIDER_URL;
   if (!wsProviderUrl) {
     throw new Error("WS_PROVIDER_URL is not set in the .env file");
   }
 
-  console.log("Create a provider with the URL from .env");
+  logger.info("Create a provider with the URL from .env");
   const provider = new WsProvider(wsProviderUrl);
 
-  console.log("Instantiate the API with the provider");
+  logger.info("Instantiate the API with the provider");
   const api = await ApiPromise.create({
     provider,
     types: {
@@ -68,10 +71,10 @@ async function main() {
     },
   });
 
-  console.log("Construct the keyring");
+  logger.info("Construct the keyring");
   const keyring = new Keyring({ type: "sr25519" });
 
-  console.log("Load accounts from .env file");
+  logger.info("Load accounts from .env file");
   const faucetAccount = keyring.addFromUri(
     getEnvVar("FAUCET_ACCOUNT_MNEMONIC")
   );
@@ -105,7 +108,7 @@ async function main() {
   const demoAccTransferAmount =
     parseInt(getEnvVar("DEMO_ACCOUNT_TRANSFER_AMOUNT")) * 1e12;
 
-  console.log("Start to initialise the owners of the app agents");
+  logger.info("Start to initialise the owners of the app agents");
   const transfers = [
     api.tx.balances.transferKeepAlive(
       appAgentOneOwner.address,
@@ -133,32 +136,32 @@ async function main() {
     ),
   ];
 
-  console.log("Send the batch of transfers");
+  logger.info("Send the batch of transfers");
   await processSignedBatchTransaction(
     faucetAccount,
     api.tx.utility.batchAll(transfers)
   );
 
-  console.log("Traverse the game folders and collect entity data");
+  logger.info("Traverse the game folders and collect entity data");
   const gameData = collectGameData(game_folders);
 
-  console.log("Starting to process game data");
+  logger.info("Starting to process game data");
   for (let [gameIndex, game] of gameData.entries()) {
-    console.log(`Processing game ${gameIndex + 1}`);
+    logger.info(`Processing game ${gameIndex + 1}`);
     const appAgentOwner = appAgentOwners[gameIndex];
 
     // Create app agent and set metadata
-    console.log(`Creating app agent for game ${gameIndex + 1}`);
+    logger.info(`Creating app agent for game ${gameIndex + 1}`);
     const appAgentId = await create_app_agent(
       api,
       appAgentOwner,
       game.appAgent?.metadataUrl
     );
-    console.log(`App agent created for game ${gameIndex + 1}: ${appAgentId}`);
+    logger.info(`App agent created for game ${gameIndex + 1}: ${appAgentId}`);
 
     // Create and configure fungible tokens
     if (game.fungibles.length > 0) {
-      console.log(`Creating fungible tokens for game ${gameIndex + 1}`);
+      logger.info(`Creating fungible tokens for game ${gameIndex + 1}`);
       const fungibleIds = await create_fungible_tokens(
         api,
         appAgentOwner,
@@ -167,16 +170,16 @@ async function main() {
           .map((f) => f.decimals)
           .filter((d): d is number => d !== undefined)
       );
-      console.log(
+      logger.info(
         `Fungible tokens created for game ${gameIndex + 1}:`,
         fungibleIds
       );
-      console.log(`Save IDs of fungible tokens for later use`);
+      logger.info(`Save IDs of fungible tokens for later use`);
       for (let i = 0; i < fungibleIds.length; i++) {
         let fungibleId = fungibleIds[i];
         game.fungibles[i].tokenId = fungibleId;
       }
-      console.log(
+      logger.info(
         `Setting metadata and minting fungible tokens for game ${gameIndex + 1}`
       );
       await set_metadata_and_mint_fungible_token(
@@ -186,31 +189,31 @@ async function main() {
         game.fungibles,
         demo_user_one
       );
-      console.log(
+      logger.info(
         `Fungible tokens created and configured for game ${gameIndex + 1}`
       );
     }
 
     // Create and configure NFT collections and tokens
-    console.log(`Creating NFT collections for game ${gameIndex + 1}`);
+    logger.info(`Creating NFT collections for game ${gameIndex + 1}`);
     const collectionIds = await create_nft_collections(
       api,
       appAgentOwner,
       appAgentId,
       game.nftCollections.length
     );
-    console.log(
+    logger.info(
       `NFT collections created for game ${gameIndex + 1}:`,
       collectionIds
     );
-    console.log(`Save IDs of NFT collections for later use`);
+    logger.info(`Save IDs of NFT collections for later use`);
     for (let i = 0; i < collectionIds.length; i++) {
       let collectionId = collectionIds[i];
       game.nftCollections[i].collectionId = collectionId;
     }
 
     for (let i = 0; i < game.nftCollections.length; i++) {
-      console.log(
+      logger.info(
         `Setting metadata and minting NFTs for collection ${
           collectionIds[i]
         } of game ${gameIndex + 1}`
@@ -226,20 +229,20 @@ async function main() {
         game.nftCollections[i].tokens[k].tokenId = nftTokenIds[k];
       }
     }
-    console.log(
+    logger.info(
       `NFT collections created and configured for game ${gameIndex + 1}`
     );
   }
 
-  console.log("All games processed");
-  console.log(
+  logger.info("All games processed");
+  logger.info(
     "Fungibles:",
     gameData
       .map((f) => f.fungibles)
       .flat()
       .map((f) => f.tokenId)
   );
-  console.log(
+  logger.info(
     "Collections:",
     gameData
       .map((f) => f.nftCollections)
@@ -247,7 +250,7 @@ async function main() {
       .map((f) => f.collectionId)
   );
 
-  console.log("Create demo transfers for fungibles");
+  logger.info("Create demo transfers for fungibles");
   for (const fungibleInfo of gameData.map((f) => f.fungibles).flat()) {
     await create_token_transfer(
       api,
@@ -272,7 +275,7 @@ async function main() {
     );
   }
 
-  console.log("Create demo transfers for NFTs");
+  logger.info("Create demo transfers for NFTs");
   for (const collectionInfo of gameData.map((f) => f.nftCollections).flat()) {
     const recipient = Math.random() < 0.5 ? demo_user_three : demo_user_two;
     for (const nftTokenInfo of collectionInfo.tokens) {
@@ -375,7 +378,7 @@ async function create_balance_transfers(
   token_recipient: KeyringPair,
   token_recipient_two: KeyringPair
 ) {
-  console.log("Generate free transfers between the two users");
+  logger.info("Generate free transfers between the two users");
 
   for (let i = 0; i < 2; i++) {
     const tx = api.tx.playerTransfers.submitTransferBalances(
@@ -384,7 +387,7 @@ async function create_balance_transfers(
     );
     await processSignedTransaction(token_recipient, tx);
   }
-  console.log(`Free transfer created and confirmed`);
+  logger.info(`Free transfer created and confirmed`);
 }
 
 main()
@@ -392,6 +395,6 @@ main()
   .finally(() => {
     const endTime = Date.now();
     const executionTime = (endTime - startTime) / 1000; // Convert to seconds
-    console.log(`Total execution time: ${executionTime.toFixed(2)} seconds`);
+    logger.info(`Total execution time: ${executionTime.toFixed(2)} seconds`);
     process.exit();
   });

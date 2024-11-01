@@ -1,6 +1,9 @@
 import { ApiPromise } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
+import Pino from "pino";
 import { processSignedTransaction } from "./utils";
+
+const logger = Pino();
 
 async function create_app_agent(
   api: ApiPromise,
@@ -9,7 +12,7 @@ async function create_app_agent(
 ): Promise<string> {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log(
+      logger.info(
         "Start to create AppAgent for the owner: " + appAgentOwner.address
       );
 
@@ -29,7 +32,7 @@ async function create_app_agent(
         }
       }
 
-      console.log("Create the transaction to set the metadata");
+      logger.info("Create the transaction to set the metadata");
       const set_metadata_tx = api.tx.appAgents.setAppAgentMetadata(
         appagentId,
         metadataUrl
