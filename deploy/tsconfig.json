@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./build",
+    "moduleResolution": "Node"
+  },
+  "include": ["./**/*.ts", "index.ts"],
+  "exclude": ["node_modules", "build"]
+}
