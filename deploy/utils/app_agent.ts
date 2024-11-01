@@ -1,7 +1,7 @@
 import { ApiPromise } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import Pino from "pino";
-import { processSignedTransaction } from "./utils";
+import { processSignedTransaction } from "./utils.js";
 
 const logger = Pino();
 

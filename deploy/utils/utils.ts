@@ -2,7 +2,7 @@ import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ISubmittableResult } from "@polkadot/types/types";
 import Pino from "pino";
-import { getAllEvents } from "./datagate";
+import { getAllEvents } from "./datagate.js";
 
 const expectedTxFinalisationTime = 45000; // 45 sec
 const maxWaitTime = 6000000; // 10 minutes in milliseconds

@@ -6,22 +6,22 @@ import fs from "fs";
 import path from "path";
 import Pino from "pino";
 import { fileURLToPath } from "url";
-import { create_app_agent } from "./utils/app_agent";
+import { create_app_agent } from "./utils/app_agent.js";
 import {
   create_fungible_tokens,
   create_token_transfer,
   set_metadata_and_mint_fungible_token,
-} from "./utils/fungible";
+} from "./utils/fungible.js";
 import {
   create_nft_collections,
   create_nft_transfers,
   set_metadata_and_mint_nft,
-} from "./utils/nft";
+} from "./utils/nft.js";
 import { Collection, GameData } from "./utils/types";
 import {
   processSignedBatchTransaction,
   processSignedTransaction,
-} from "./utils/utils";
+} from "./utils/utils.js";
 
 const logger = Pino();
 

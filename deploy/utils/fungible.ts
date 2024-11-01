@@ -2,7 +2,10 @@ import { ApiPromise } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import Pino from "pino";
 import { Fungible } from "./types";
-import { processClearingTransaction, processSignedTransaction } from "./utils";
+import {
+  processClearingTransaction,
+  processSignedTransaction,
+} from "./utils.js";
 
 const logger = Pino();
 async function create_fungible_tokens(
