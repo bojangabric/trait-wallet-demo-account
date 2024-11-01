@@ -61,7 +61,8 @@ async function create_nft_collections(
       logger.info("Resolving promise with collection_ids:", collection_ids);
       resolve(collection_ids);
     } catch (error) {
-      logger.error("Error creating NFT Collections:", error.message);
+      const message = error instanceof Error ? error.message : error;
+      logger.error("Error creating NFT Collections:", message);
       reject(error);
     }
   });
@@ -151,7 +152,8 @@ async function set_metadata_and_mint_nft(
       logger.info("Resolving promise with nftTokenIds:", nftTokenIds);
       resolve(nftTokenIds);
     } catch (error) {
-      logger.error("Error in set_metadata_and_mint_nft:", error.message);
+      const message = error instanceof Error ? error.message : error;
+      logger.error("Error in set_metadata_and_mint_nft:", message);
       reject(error);
     }
   });

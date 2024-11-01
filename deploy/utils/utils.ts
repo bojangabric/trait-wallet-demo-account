@@ -110,7 +110,10 @@ async function processSignedTransaction(
   });
 }
 
-async function processSignedBatchTransaction(signer, tx) {
+async function processSignedBatchTransaction(
+  signer: KeyringPair,
+  tx: SubmittableExtrinsic<"promise", ISubmittableResult>
+) {
   return new Promise(async (resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error(`Batch transaction timed out after ${maxWaitTime}ms`));
